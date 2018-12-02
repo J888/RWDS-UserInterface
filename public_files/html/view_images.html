@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html>
+  <head>
+
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/css/bootstrap.min.css" crossorigin="anonymous">
+    <script
+  src="https://code.jquery.com/jquery-3.3.1.min.js"
+  integrity="sha256-FgpCb/KJQlLNfOu91ta32o/NMZxltwRo8QtmkMRdAu8="
+  crossorigin="anonymous"></script>
+
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.3/umd/popper.min.js" integrity="sha384-ZMP7rVo3mIykV+2+9J3UJ46jBk0WLaUAdn689aCwoqbBJiSnjAK/l8WvCWPIPm49" crossorigin="anonymous"></script>
+<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/js/bootstrap.min.js" integrity="sha384-ChfqqxuZUCnJSK3+MXmPNIyE6ZbWh2IMqE241rYiqJxyMiZ6OW/JmZQ5stwEULTy" crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/aws-sdk/2.368.0/aws-sdk.min.js"></script>
+    <title>Image List</title>
+    <style>
+      td img {
+        max-width: 200px;
+      }
+
+      #exampleModalLongTitle{
+        color: red;
+      }
+    </style>
+  </head>
+  <body>
+
+    <nav class="navbar navbar-expand-lg navbar-light bg-light">
+    <a class="navbar-brand" href="/">Raspberry Pi Weapon Detection System</a>
+    <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+      <span class="navbar-toggler-icon"></span>
+    </button>
+
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav mr-auto">
+        <li class="nav-item">
+          <a class="nav-link" href="/">Image List</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" href="#" onclick="listCameras()">Camera List</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" href="#" onclick="setPage('html/development_notes.html')">Development Notes</a>
+        </li>
+      </ul>
+    </div>
+  </nav>
+
+
+
+  <div class="container-fluid">
+      <!-- Modal -->
+      <div class="modal fade" id="weaponAlertModal" tabindex="-1" role="dialog" aria-labelledby="exampleModalCenterTitle" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered" role="document">
+          <div class="modal-content">
+            <div class="modal-header">
+              <h5 class="modal-title" id="exampleModalLongTitle">WEAPON DETECTED</h5>
+              <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                <span aria-hidden="true">&times;</span>
+              </button>
+            </div>
+            <div class="modal-body">
+              <p>A WEAPON WAS JUST DETECTED. Please review the frame.</p>
+              <p>Found on camera #<span id="cameraSpan"></span></p>
+
+            </div>
+            <div class="modal-footer">
+              <button type="button" class="btn btn-secondary" data-dismiss="modal">Dismiss</button>
+              <button type="button" id="reviewImageButton" class="btn btn-primary">Review Image</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    <div id="content"></div>
+
+  </div>
+  </body>
+</html>
+<script src="/js/ajax.js"></script>
+<!-- <script src="/socket.io/socket.io.js"></script> -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/2.0.3/socket.io.slim.js"></script>
+<script>
+  //$('#weaponAlertModal').modal('toggle');
+
+  //var socket = io.connect('http://localhost:3000');
+  const socket = io({
+    transports: ['websocket']
+  });
+
+  socket.on('connect', () => {
+    console.log(socket.id); // 'G5p5...'
+  });
+
+  socket.on('reconnect_attempt', (attemptNumber) => {
+  console.log(attemptNumber)
+});
+  
+  console.log(socket);
+  socket.on('alert', function (data) {
+    $('#weaponAlertModal').modal('toggle');
+    document.getElementById("cameraSpan").innerText=data.camIdentifier;
+
+
+    $("#reviewImageButton").click(function() {
+      $('#weaponAlertModal').modal('toggle');
+      getImageDetails(data.imageName);
+    });
+
+
+    console.log(data);
+    //socket.emit('my other event', { my: 'data' });
+  });
+
+
+
+  const endpointForImages = "https://s3.amazonaws.com/rwds-images/";
+
+  function createTableHead(labels, tr){
+    labels.forEach((label) => {
+      let th = document.createElement("th");
+      th.scope = "col";
+      th.innerHTML = label;
+      tr.appendChild(th);
+    });
+  }
+
+  $.ajax({
+    url: "/listImages",
+    type: "GET",
+    dataType: "json",
+    success: function(data){
+      var jumbotron = document.createElement("div");
+      jumbotron.className="jumbotron";
+      jumbotron.innerHTML= "<h1>Image List</h1>"
+                            +"<p>List of object detection images</p>"
+      document.getElementById("content").appendChild(jumbotron);
+
+      var table = document.createElement("table");
+      table.className="table";
+
+      var thead = document.createElement("thead");
+      table.appendChild(thead);
+
+      var tr = document.createElement('tr');
+      thead.appendChild(tr);
+      var theadLabels = ['#', 'Image Name', 'Size', 'Image', 'View Details'];
+      createTableHead(theadLabels, tr);
+
+      var tbody = document.createElement("tbody");
+      table.appendChild(tbody);
+
+
+      console.log(data);
+      data.Contents.forEach((image, index) => {
+            let tr = document.createElement("tr");
+            tbody.appendChild(tr);
+
+            var td = document.createElement("td");
+            var n = parseInt(index, 10)+1;
+            td.innerHTML = n;
+            tbody.appendChild(td);
+
+            var td = document.createElement("td");
+            td.innerHTML = image.Key;
+            tbody.appendChild(td);
+
+            var td = document.createElement("td");
+            td.innerHTML = image.Size + " Bytes";
+            tbody.appendChild(td);
+
+            var td = document.createElement("td");
+            td.innerHTML = "<img src='"+endpointForImages+image.Key+"'></img>";
+            tbody.appendChild(td);
+
+            var td = document.createElement("td");
+            td.innerHTML = "<img onClick='getImageDetails(&quot;"+image.Key+"&quot;)' style='max-width: 40px;' src='icons/view.png'></img>";
+            tbody.appendChild(td);
+        });
+        document.getElementById("content").appendChild(table);
+    },
+    fail: function(){
+      console.log("error in ajax function in listImages")
+    }
+  });
+
+
+  //
+  // ajax("/listImages", function(httpRequest){
+  //
+  //
+  //
+  //
+  //   });
+  //
+  //   document.getElementById("content").appendChild(table);
+  // });
+
+  //start getting details on image with key = key (called after clicking view icon)
+  function getImageDetails(key){
+    let c = document.getElementById("content");
+    c.innerHTML="";
+
+    var img = document.createElement("img");
+    img.src=endpointForImages+key;
+    c.appendChild(img);
+
+    // ajax("/imageDetails/"+key, function(httpRequest){
+    //   let myObj = JSON.parse(httpRequest.responseText);
+    //   console.log(myObj);
+    //
+    //   var ul = document.createElement("ul");
+    //   ul.className="list-group";
+    //   c.appendChild(ul);
+    //
+    //
+    //   var li = document.createElement("li");
+    //   li.className="list-group-item";
+    //   li.innerHTML=""
+    //
+    //   var object = myObj[0];
+    //   console.log(object);
+    //
+    //   for (var prop in object) {
+    //     if (object.hasOwnProperty(prop)) {
+    //         var li = document.createElement("li");
+    //         li.className="list-group-item";
+    //         li.innerHTML="<b>"+prop+"</b>: "+object[prop];
+    //         ul.appendChild(li);
+    //
+    //     }
+    //   }
+    //
+    //
+    // });
+
+    $.ajax({
+      url: "/imageDetails/"+key,
+      type: "GET",
+      dataType: "json",
+      success: function(data){
+        var ul = document.createElement("ul");
+        ul.className="list-group";
+        c.appendChild(ul);
+
+        var li = document.createElement("li");
+        li.className="list-group-item";
+        li.innerHTML=""
+
+        var object = data[0];
+        for (var prop in object) {
+          if (object.hasOwnProperty(prop)) {
+              var li = document.createElement("li");
+              li.className="list-group-item";
+              li.innerHTML="<b>"+prop+"</b>: "+object[prop];
+              ul.appendChild(li);
+
+          }
+        }
+
+      },
+      fail: function(){
+        console.log("error in ajax function in setPage")
+      }
+    });
+
+
+
+
+  }
+
+
+  function setPage(path){
+    $.ajax({
+      url: path,
+      type: "GET",
+      dataType: "html",
+      success: function(data){
+      //  console.log(data);
+        document.getElementById("content").innerHTML = data;
+
+      },
+      fail: function(){
+        console.log("error in ajax function in setPage")
+      }
+    });
+  }
+
+  function listCameras(){
+      $.ajax({
+        url: '/listCameras',
+        type: "GET",
+        dataType: "json",
+        success: function(data){
+          console.log(data);
+          var camerasArray = [];
+          data.forEach((arrayItem)=>{
+            if(!camerasArray.includes(arrayItem.cam_identifier)){
+              camerasArray+=arrayItem.cam_identifier
+            }
+          });
+          let content = document.getElementById("content");
+          content.innerHTML="";
+          var ul = document.createElement("ul");
+          ul.className="list-group";
+          content.appendChild(ul);
+
+          if(camerasArray.length>0){
+
+            for(let i = 0; i < camerasArray.length; i++){
+              var li = document.createElement("li");
+              li.className="list-group-item";
+              li.innerHTML="<b>Camera #</b>: "+camerasArray[i];
+              ul.appendChild(li);
+            }
+          }
+
+        },
+        fail: function(){
+          console.log("error in ajax function in listCameras")
+        }
+      });
+  }
+</script>

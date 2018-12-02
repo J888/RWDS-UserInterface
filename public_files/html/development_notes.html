@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Development Notes</title>
+    <style>
+      p {
+        margin-bottom: 30px;
+      }
+    </style>
+  </head>
+  <body>
+
+    <h3>NodeJS</h3>
+    <p>for handling the UI, getting all the images in the bucket, and MySQL queries</p>
+
+    <h3>Image Storage</h3>
+    <p>Images are stored in a AWS S3 Bucket with name/unique-identifer = rwds-images</p>
+
+    <h3>Metadata</h3>
+    <p>Metadata on images is stored in a MySQL database in a single table.</p>
+    <img src="images/table_screenshot.png" style="width: 500px !important"></img>
+
+    <h3>Insert Image via Http Post Request</h3>
+    <p>
+      Example: (this is just my url for development, once it's deployed it'll be a different url but /insertImage will be the same)
+      <br/>
+      url = 'http://localhost:3000/insertImage'
+      <br/>
+      data = {
+          'image': image.encode("base64"),
+          'camIdentifier' : 1,
+          'imageName': filename,
+          'imageTimestamp': st,
+          'numWeapons': 1
+      }
+      <br/>
+    </p>
+    <h3>Socket.io for server to client alerts</h3>
+    <p>When a post request is made to the /insertImage endpoint, the server emits a message to the client that a weapon has been found,
+    along with metadata pertaining to the detection</p>
+
+  </body>
+</html>
