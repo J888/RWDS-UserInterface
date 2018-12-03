@@ -95,22 +95,20 @@
   socket.on('reconnect_attempt', (attemptNumber) => {
   console.log(attemptNumber)
 });
-  
+
   console.log(socket);
   socket.on('alert', function (data) {
     $('#weaponAlertModal').modal('toggle');
     document.getElementById("cameraSpan").innerText=data.camIdentifier;
 
-
     $("#reviewImageButton").click(function() {
       $('#weaponAlertModal').modal('toggle');
       getImageDetails(data.imageName);
     });
-
-
     console.log(data);
     //socket.emit('my other event', { my: 'data' });
   });
+
 
 
 
@@ -174,7 +172,7 @@
             tbody.appendChild(td);
 
             var td = document.createElement("td");
-            td.innerHTML = "<img onClick='getImageDetails(&quot;"+image.Key+"&quot;)' style='max-width: 40px;' src='icons/view.png'></img>";
+            td.innerHTML = "<img onClick='getImageDetails(&quot;"+encodeURIComponent(image.Key)+"&quot;)' style='max-width: 40px;' src='icons/view.png'></img>";
             tbody.appendChild(td);
         });
         document.getElementById("content").appendChild(table);
@@ -185,17 +183,6 @@
   });
 
 
-  //
-  // ajax("/listImages", function(httpRequest){
-  //
-  //
-  //
-  //
-  //   });
-  //
-  //   document.getElementById("content").appendChild(table);
-  // });
-
   //start getting details on image with key = key (called after clicking view icon)
   function getImageDetails(key){
     let c = document.getElementById("content");
@@ -204,35 +191,6 @@
     var img = document.createElement("img");
     img.src=endpointForImages+key;
     c.appendChild(img);
-
-    // ajax("/imageDetails/"+key, function(httpRequest){
-    //   let myObj = JSON.parse(httpRequest.responseText);
-    //   console.log(myObj);
-    //
-    //   var ul = document.createElement("ul");
-    //   ul.className="list-group";
-    //   c.appendChild(ul);
-    //
-    //
-    //   var li = document.createElement("li");
-    //   li.className="list-group-item";
-    //   li.innerHTML=""
-    //
-    //   var object = myObj[0];
-    //   console.log(object);
-    //
-    //   for (var prop in object) {
-    //     if (object.hasOwnProperty(prop)) {
-    //         var li = document.createElement("li");
-    //         li.className="list-group-item";
-    //         li.innerHTML="<b>"+prop+"</b>: "+object[prop];
-    //         ul.appendChild(li);
-    //
-    //     }
-    //   }
-    //
-    //
-    // });
 
     $.ajax({
       url: "/imageDetails/"+key,
@@ -258,6 +216,13 @@
           }
         }
 
+        //add a delete button
+        var li = document.createElement("li");
+        li.className="list-group-item";
+        let imageId=data[0].image_id;
+        li.innerHTML="<button class='btn btn-danger' onclick='deleteImage("+imageId+")'>Delete Image</button>"
+        ul.appendChild(li);
+
       },
       fail: function(){
         console.log("error in ajax function in setPage")
@@ -267,6 +232,21 @@
 
 
 
+
+  }
+
+  function deleteImage(id){
+   $.ajax({
+     url: "/deleteImage",
+     type: "POST",
+     data: {'id':id},
+     dataType: "text",
+     success: function(data){
+       let c = document.getElementById("content");
+       c.innerHTML="";
+       c.innerHTML=data;
+     }
+   });
   }
 
 

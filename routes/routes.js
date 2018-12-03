@@ -156,33 +156,17 @@ var appRouter = function (app) {
      camIdentifier: cam_identifier
    });
 
-   //decode and put image into image folder
-   //fs.writeFile("images/"+image_name, new Buffer(req.body.image, "base64"), function(err) {});
-
-
-      // var sql = "INSERT INTO image (image_name, image_timestamp, cam_identifier, num_weapons)"+
-      //          " VALUES ('"+image_name+"', '"+image_timestamp+"', "+cam_identifier+", "+num_weapons+")";
-      // pool.query(sql, function (error, results, fields) {
-      //   if (error){
-      //     console.log("there was an error in app.post('/insertImage', function(req, res)")
-      //     throw error;
-      //   }
-      // });
-
 
       pool.getConnection(function(err, connection) {
         if (err) throw err; // not connected!
 
-        // Use the connection
         connection.query("INSERT INTO image (image_name, image_timestamp, cam_identifier, num_weapons)"+
                   " VALUES ('"+image_name+"', '"+image_timestamp+"', "+cam_identifier+", "+num_weapons+")", function (error, results, fields) {
-          // When done with the connection, release it.
+
           connection.release();
 
-          // Handle error after the release.
           if (error) throw error;
 
-          // Don't use the connection here, it has been returned to the pool.
         });
       });
 
@@ -199,7 +183,46 @@ var appRouter = function (app) {
 
 
 
- });
+ }); //insertImage
+
+ app.post("/deleteImage", function(req, res){
+   let id = req.body.id;
+
+   console.log("about to delete image with id "+id);
+
+   pool.getConnection(function(err, connection) {
+     if (err) throw err; // not connected!
+     connection.query("SELECT image_name FROM image WHERE image_id="+id, function (error, results, fields) {
+       console.log("deleting image with id"+id);
+       console.log("deleting image with name"+results[0].image_name+"from AWS S3");
+       //delete image from S3
+       var s3 = new AWS.S3();
+       var params = {  Bucket: 'rwds-images', Key: results[0].image_name };
+        s3.deleteObject(params, function(err, data) {
+          if (err) console.log(err, err.stack);  // error
+          else     console.log("Image successfully deleted");                 // deleted
+        });
+
+       connection.release();
+       if (error) throw error;
+     });
+   });
+
+   pool.getConnection(function(err, connection) {
+     if (err) throw err; // not connected!
+     connection.query("DELETE FROM image WHERE image_id ="+id, function (error, results, fields) {
+       connection.release();
+       if (error) throw error;
+     });
+   });
+
+   res.status(200).send("successfully deleted image with id "+id);
+
+
+
+ }); //deleteImage
+
+
 }
 
 module.exports = appRouter;
