@@ -49,7 +49,7 @@
 
 
   <div class="container-fluid">
-      <!-- Modal -->
+      <!-- Modal 1-->
       <div class="modal fade" id="weaponAlertModal" tabindex="-1" role="dialog" aria-labelledby="exampleModalCenterTitle" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered" role="document">
           <div class="modal-content">
@@ -72,9 +72,30 @@
         </div>
       </div>
 
+      <!-- Modal Test-->
+      <div class="modal fade" id="testAlertModal" tabindex="-1" role="dialog" aria-labelledby="exampleModalCenterTitle" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered" role="document">
+          <div class="modal-content">
+            <div class="modal-header">
+              <h5 class="modal-title" id="exampleModalLongTitle">THIS IS A TEST</h5>
+              <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                <span aria-hidden="true">&times;</span>
+              </button>
+            </div>
+            <div class="modal-body">
+              <p>This alert will be sent when a weapon was detected.</p>
+            </div>
+            <div class="modal-footer">
+              <button type="button" class="btn btn-secondary" data-dismiss="modal">Dismiss</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
     <div id="content"></div>
 
   </div>
+
   </body>
 </html>
 <script src="/js/ajax.js"></script>
@@ -107,6 +128,11 @@
     });
     console.log(data);
     //socket.emit('my other event', { my: 'data' });
+  });
+
+  //for triggering test alert
+  socket.on('test-alert', function (data) {
+    $('#testAlertModal').modal('toggle');
   });
 
 

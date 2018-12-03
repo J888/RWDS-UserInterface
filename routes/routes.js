@@ -134,6 +134,15 @@ var appRouter = function (app) {
  //    });
  // });
 
+
+ app.get("/testAlert", function(req, res){
+   io.sockets.emit('test-alert', {
+     message: 'test'
+   });
+   res.status(200).send("Test Alert Sent");
+ });
+
+
  app.post("/insertImage", function(req, res){
    var image = req.body.image;
    var image_name=req.body.imageName;
